@@ -1,0 +1,11 @@
+pluginManagement {
+    repositories {
+        maven { url = 'https://repo.spring.io/snapshot' }
+        gradlePluginPortal()
+    }
+}
+rootProject.name = 'yujeong-java-library-management'
+include 'library-common'
+include 'library-management'
+include 'library-member'
+include 'library-rental'
