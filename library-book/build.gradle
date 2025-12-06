@@ -7,7 +7,7 @@ plugins {
 
 group = 'com.book.library'
 version = '0.0.1-SNAPSHOT'
-description = 'library-rental'
+description = 'library-book'
 
 java {
     toolchain {

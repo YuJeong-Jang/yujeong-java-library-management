@@ -45,7 +45,7 @@ yujeong-java-library-management
 │       └── main
 │           ├── java
 │           └── resources
-└── library-management
+└── library-book
     ├── build.gradle
     └── src
         └── main
@@ -56,7 +56,7 @@ yujeong-java-library-management
   - 공통 엔티티, DTO, 예외, 유틸성 코드
 - library-member (port : 7070)
   - 회원 가입, 로그인, 회원 조회/수정
-- library-management (port : 8080)
+- library-book (port : 8080)
   - 도서 등록/수정/삭제, 도서 검색
 - library-rental (port : 9090)
   - 도서 대여/반납, 연체 상태 관리
@@ -64,7 +64,7 @@ yujeong-java-library-management
 ##### 도메인 설계 (간단 요약)
 - Member
   - member_id, login_id, password, name, email, status, role etc
-- Book (management)
+- Book (book)
   - book_id, isbn, title, author. publisher, total_quantity, available_qty etc
 - Rental
   - rental_id, member_id, book_id, rental_status, rental_date, due_date, return_date etc

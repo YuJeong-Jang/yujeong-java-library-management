@@ -6,6 +6,6 @@ pluginManagement {
 }
 rootProject.name = 'yujeong-java-library-management'
 include 'library-common'
-include 'library-management'
+include 'library-book'
 include 'library-member'
 include 'library-rental'
