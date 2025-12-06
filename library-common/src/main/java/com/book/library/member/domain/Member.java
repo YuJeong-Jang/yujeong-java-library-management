@@ -1,5 +1,6 @@
 package com.book.library.member.domain;
 
+import com.book.library.Enums;
 import com.book.library.rental.domain.Rental;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -10,9 +11,6 @@ import org.hibernate.annotations.ColumnDefault;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
-
-enum MemberStatus { ACTIVE, INACTIVE } // active = 0, inactive = 1
-enum MemberRole { USER, ADMIN } // user = 0, admin = 1
 
 @Entity
 @Table(name = "member")
@@ -50,11 +48,11 @@ public class Member {
 
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "status")
-    private MemberStatus status = MemberStatus.ACTIVE;
+    private Enums.MemberStatus status = Enums.MemberStatus.ACTIVE;
 
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "role")
-    private MemberRole role = MemberRole.USER;
+    private Enums.MemberRole role = Enums.MemberRole.USER;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")

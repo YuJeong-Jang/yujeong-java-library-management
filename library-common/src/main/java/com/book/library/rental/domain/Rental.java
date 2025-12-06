@@ -1,5 +1,6 @@
 package com.book.library.rental.domain;
 
+import com.book.library.Enums;
 import com.book.library.book.domain.Book;
 import com.book.library.member.domain.Member;
 import jakarta.persistence.*;
@@ -9,10 +10,6 @@ import lombok.Data;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
-
-// rented = 0, returned = 1, overdue = 2
-// rented : 대여, returned : 반납, overdue : 연체
-enum RentalStatus { RENTED, RETURNED, OVERDUE }
 
 @Entity
 @Table(name = "rental")
@@ -37,7 +34,7 @@ public class Rental {
     @NotNull
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "rental_status", nullable = false)
-    private RentalStatus rentalStatus = RentalStatus.RETURNED;
+    private Enums.RentalStatus rentalStatus = Enums.RentalStatus.RETURNED;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")

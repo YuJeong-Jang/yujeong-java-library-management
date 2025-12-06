@@ -1,0 +1,36 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm" th:fragment="navbar(activePage)">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/">
+            <i class="bi bi-book-half me-2"></i>도서관리시스템
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/}" th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
+                        <i class="bi bi-house-door me-1"></i>대시보드
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/books}" th:classappend="${activePage == 'books' ? 'active' : ''}">
+                        <i class="bi bi-book me-1"></i>도서목록
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/books/new}" th:classappend="${activePage == 'book-new' ? 'active' : ''}">
+                        <i class="bi bi-plus-circle me-1"></i>도서등록
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" th:href="@{/members}" th:classappend="${activePage == 'members' ? 'active' : ''}">
+                        <i class="bi bi-people me-1"></i>회원목록
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

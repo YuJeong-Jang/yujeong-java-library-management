@@ -1,5 +1,6 @@
 package com.book.library.book.domain;
 
+import com.book.library.Enums;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -8,8 +9,6 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.time.LocalDate;
-
-enum BookStatus { AVAILABLE, BORROWED }
 
 @Entity
 @Table(name = "book")
@@ -56,7 +55,7 @@ public class Book {
     @NotNull
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "status", nullable = false)
-    private BookStatus status = BookStatus.AVAILABLE;
+    private Enums.BookStatus status = Enums.BookStatus.AVAILABLE;
 
     @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
