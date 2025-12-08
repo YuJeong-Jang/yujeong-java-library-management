@@ -1,36 +1,32 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm" th:fragment="navbar(activePage)">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="/">
-            <i class="bi bi-book-half me-2"></i>도서관리시스템
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<nav th:fragment="navbar(activePage)" class="navbar-baby">
+    <div class="navbar-inner">
+        <!-- 로고 -->
+        <a class="navbar-baby-brand" th:href="@{/}">
+            <i class="bi bi-book-heart-fill"></i>
+            <span>도서관리시스템</span>
         </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/}" th:classappend="${activePage == 'dashboard' ? 'active' : ''}">
-                        <i class="bi bi-house-door me-1"></i>대시보드
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/books}" th:classappend="${activePage == 'books' ? 'active' : ''}">
-                        <i class="bi bi-book me-1"></i>도서목록
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/books/new}" th:classappend="${activePage == 'book-new' ? 'active' : ''}">
-                        <i class="bi bi-plus-circle me-1"></i>도서등록
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" th:href="@{/members}" th:classappend="${activePage == 'members' ? 'active' : ''}">
-                        <i class="bi bi-people me-1"></i>회원목록
-                    </a>
-                </li>
-            </ul>
+        <!-- 모든 메뉴 -->
+        <div class="navbar-menu-grid">
+            <a th:href="@{/}" th:classappend="${activePage == 'home' ? 'active' : ''}" class="nav-item-baby">
+                <small>🏠 홈</small>
+                <i class="bi bi-house-door-fill"></i>
+            </a>
+            <a th:href="@{/books/books}" th:classappend="${activePage == 'books' ? 'active' : ''}" class="nav-item-baby">
+                <small>📚 도서</small>
+                <i class="bi bi-book-fill"></i>
+            </a>
+            <a th:href="@{/members/members}" th:classappend="${activePage == 'members' ? 'active' : ''}" class="nav-item-baby">
+                <small>👥 회원</small>
+                <i class="bi bi-people-fill"></i>
+            </a>
+            <a th:href="@{/rentals/rentals}" th:classappend="${activePage == 'rentals' ? 'active' : ''}" class="nav-item-baby">
+                <small>🔄 대여</small>
+                <i class="bi bi-arrow-left-right"></i>
+            </a>
         </div>
     </div>
 </nav>
+</html>

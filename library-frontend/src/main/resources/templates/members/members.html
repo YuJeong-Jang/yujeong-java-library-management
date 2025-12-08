@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="layouts/default">
+
+<head>
+    <title>회원목록</title>
+</head>
+
+<body>
+<div layout:fragment="content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">회원 목록</h1>
+        <a th:href="@{/members/new}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>회원 등록
+        </a>
+    </div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>회원번호</th>
+                        <th>이름</th>
+                        <th>연락처</th>
+                        <th>가입일</th>
+                        <th>상태</th>
+                        <th>관리</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="member : ${members}">
+                        <td th:text="${member.id}">001</td>
+                        <td th:text="${member.name}">홍길동</td>
+                        <td th:text="${member.phone}">010-1234-5678</td>
+                        <td th:text="${#temporals.format(member.createdAt, 'yyyy-MM-dd')}">2025-01-15</td>
+                        <td>
+                            <span th:if="${member.status == 'ACTIVE'}" class="badge bg-success">활성</span>
+                            <span th:unless="${member.status == 'ACTIVE'}" class="badge bg-secondary">비활성</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a th:href="@{/members/{id}(id=${member.id})}" class="btn btn-outline-primary">상세</a>
+                                <a th:href="@{/members/{id}/edit(id=${member.id})}" class="btn btn-outline-warning">수정</a>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr th:if="${members == null || members.isEmpty()}">
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-1 d-block mb-3"></i>
+                            등록된 회원이 없습니다.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -32,7 +32,7 @@ public class HomeController {
 
     @GetMapping("/")
     public String home() {
-        return "layouts/members/index";  // 대시보드
+        return "index";  // 대시보드
     }
 
     @GetMapping("/members")
@@ -44,7 +44,9 @@ public class HomeController {
                 .bodyToMono(new ParameterizedTypeReference<List<MemberResponse>>() {})
                 .block();
         model.addAttribute("members", members);
-        return "layouts/members/index";
+        model.addAttribute("title", "회원목록");
+        model.addAttribute("activePage", "members");
+        return "members/members";
     }
 
     @GetMapping("/books")
@@ -57,7 +59,7 @@ public class HomeController {
                 .bodyToMono(new ParameterizedTypeReference<List<BookResponse>>() {})
                 .block();
         model.addAttribute("books", books);
-        return "layouts/books/index";
+        return "books/books";
     }
 
     @GetMapping("/rental")
@@ -70,6 +72,6 @@ public class HomeController {
                 .bodyToMono(new ParameterizedTypeReference<List<RentalResponse>>() {})
                 .block();
         model.addAttribute("rentals", books);
-        return "layouts/rentals/index";
+        return "rentals/rentals";
     }
 }
