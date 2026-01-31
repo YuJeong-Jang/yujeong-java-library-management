@@ -34,10 +34,9 @@ public class Rental {
     @NotNull
     @Enumerated(EnumType.ORDINAL)
     @Column(name = "rental_status", nullable = false)
-    private Enums.RentalStatus rentalStatus = Enums.RentalStatus.RETURNED;
+    private Enums.RentalStatus rentalStatus = Enums.RentalStatus.RENTED;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "rental_date", nullable = false)
     private Instant rentalDate;
 
@@ -51,5 +50,12 @@ public class Rental {
     @Size(max = 255)
     @Column(name = "remarks")
     private String remarks;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.rentalDate == null) {
+            this.rentalDate = Instant.now();
+        }
+    }
 
 }

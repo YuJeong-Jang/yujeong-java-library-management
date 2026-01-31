@@ -1,63 +1,768 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="layouts/default">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+    layout:decorate="~{layouts/default}">
 
 <head>
-    <title>대여목록</title>
+    <title>대여 관리 - 도서관리 시스템</title>
 </head>
 
 <body>
-<div layout:fragment="content">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">대여 목록</h1>
-        <a th:href="@{/rentals/create}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-2"></i>대여 등록
-        </a>
-    </div>
+    <div layout:fragment="content">
+        <!-- Page Header -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-900 flex items-center">
+                <i class="fas fa-exchange-alt mr-3 text-blue-600"></i>대여 관리
+            </h1>
+            <!-- 관리자만 도서 대여 버튼 표시 -->
+            <button th:if="${loginMember != null and (loginMember.role == 'ADMIN' or loginMember.role == 1)}"
+                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
+                onclick="openRentalModal()">
+                <i class="fas fa-plus mr-2"></i>도서 대여
+            </button>
+        </div>
 
-    <div class="card shadow">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-dark">
-                    <tr>
-                        <th>대여번호</th>
-                        <th>이름</th>
-                        <th>연락처</th>
-                        <th>가입일</th>
-                        <th>상태</th>
-                        <th>관리</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:each="rental : ${rentals}">
-                        <td th:text="${rental.id}">001</td>
-                        <td th:text="${rental.name}">홍길동</td>
-                        <td th:text="${rental.phone}">010-1234-5678</td>
-                        <td th:text="${#temporals.format(rental.createdAt, 'yyyy-MM-dd')}">2025-01-15</td>
-                        <td>
-                            <span th:if="${rental.status == 'ACTIVE'}" class="badge bg-success">활성</span>
-                            <span th:unless="${rental.status == 'ACTIVE'}" class="badge bg-secondary">비활성</span>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a th:href="@{/rentals/{id}(id=${rental.id})}" class="btn btn-outline-primary">상세</a>
-                                <a th:href="@{/rentals/{id}/edit(id=${rental.id})}" class="btn btn-outline-warning">수정</a>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr th:if="${rentals == null || rentals.isEmpty()}">
-                        <td colspan="6" class="text-center py-5 text-muted">
-                            <i class="bi bi-people fs-1 d-block mb-3"></i>
-                            대여중인 도서가 없습니다.
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 text-center">
+                <i class="fas fa-exchange-alt text-4xl mb-3 opacity-80"></i>
+                <h4 class="text-2xl font-bold" th:text="${totalRentals ?: 0}">0</h4>
+                <p class="text-blue-100">총 대여 기록</p>
+            </div>
+            <div class="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-lg p-6 text-center">
+                <i class="fas fa-book text-4xl mb-3 opacity-80"></i>
+                <h4 class="text-2xl font-bold" th:text="${activeRentals ?: 0}">0</h4>
+                <p class="text-yellow-100">대여 중</p>
+            </div>
+            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-6 text-center">
+                <i class="fas fa-check-circle text-4xl mb-3 opacity-80"></i>
+                <h4 class="text-2xl font-bold" th:text="${completedRentals ?: 0}">0</h4>
+                <p class="text-green-100">반납 완료</p>
+            </div>
+            <div class="bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg p-6 text-center">
+                <i class="fas fa-exclamation-triangle text-4xl mb-3 opacity-80"></i>
+                <h4 class="text-2xl font-bold" th:text="${overdueRentals ?: 0}">0</h4>
+                <p class="text-red-100">연체</p>
             </div>
         </div>
+
+        <!-- Filter Tabs -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-8">
+                <button class="tab-button border-b-2 border-blue-500 text-blue-600 py-2 px-1 text-sm font-medium"
+                    onclick="showTab('all-rentals', this)">
+                    <i class="fas fa-list mr-1"></i>전체 대여
+                </button>
+                <button
+                    class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium"
+                    onclick="showTab('active-rentals', this)">
+                    <i class="fas fa-book mr-1"></i>대여 중
+                </button>
+                <button
+                    class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium"
+                    onclick="showTab('completed-rentals', this)">
+                    <i class="fas fa-check-circle mr-1"></i>대여 완료
+                </button>
+                <button
+                    class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-2 px-1 text-sm font-medium"
+                    onclick="showTab('overdue-rentals', this)">
+                    <i class="fas fa-exclamation-triangle mr-1"></i>연체
+                </button>
+            </nav>
+        </div>
+
+        <!-- Error Message -->
+        <div th:if="${error}"
+            class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 flex items-center">
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            <span th:text="${error}"></span>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- All Rentals Tab -->
+            <div id="all-rentals" class="tab-pane active">
+                <!-- Empty State for All Rentals -->
+                <div th:if="${rentals == null or rentals.isEmpty()}" class="text-center py-16">
+                    <i class="fas fa-exchange-alt text-gray-400 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">대여 기록이 없습니다</h3>
+                    <p class="text-gray-500 mb-6">새로운 도서 대여를 시작해보세요.</p>
+                    <button
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center mx-auto transition-colors"
+                        onclick="openRentalModal()">
+                        <i class="fas fa-plus mr-2"></i>도서 대여하기
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md overflow-hidden"
+                    th:if="${rentals != null and !rentals.isEmpty()}">
+                    <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <h5 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-list mr-2 text-blue-600"></i>전체 대여 목록
+                        </h5>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        대여ID</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        회원</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        도서</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        저자</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        대여일</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        반납예정일</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        반납일</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        상태</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        관리</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr th:each="rental : ${rentals}" class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                        th:text="${rental.id}">1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900" th:text="${rental.memberName}">
+                                            홍길동</div>
+                                        <div class="text-sm text-gray-500">ID: <span
+                                                th:text="${rental.memberId}">1</span></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900" th:text="${rental.bookTitle}">도서명
+                                        </div>
+                                        <div class="text-sm text-gray-500">ID: <span th:text="${rental.bookId}">1</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                        th:text="${rental.bookAuthor}">저자</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 rental-date"
+                                        th:data-date="${rental.rentalDate}">2024-01-01</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 due-date"
+                                        th:data-date="${rental.dueDate}">2024-01-15</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 return-date"
+                                        th:data-date="${rental.returnDate}">-</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span th:if="${rental.rentalStatus == 'RENTED' or rental.rentalStatus == 0}"
+                                            class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                            <i class="fas fa-book mr-1"></i>대여중
+                                        </span>
+                                        <span th:if="${rental.rentalStatus == 'RETURNED' or rental.rentalStatus == 1}"
+                                            class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            <i class="fas fa-check-circle mr-1"></i>반납완료
+                                        </span>
+                                        <span th:if="${rental.rentalStatus == 'OVERDUE' or rental.rentalStatus == 2}"
+                                            class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>연체
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <!-- 관리자만 관리 버튼들 표시 -->
+                                        <div th:if="${loginMember != null and (loginMember.role == 'ADMIN' or loginMember.role == 1)}"
+                                            class="flex space-x-2">
+                                            <!-- 대여중이거나 연체인 경우에만 반납 버튼 표시 -->
+                                            <button
+                                                th:if="${rental.rentalStatus == 'RENTED' or rental.rentalStatus == 0 or rental.rentalStatus == 'OVERDUE' or rental.rentalStatus == 2}"
+                                                type="button"
+                                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs flex items-center"
+                                                th:data-rental-id="${rental.id}"
+                                                onclick="returnBook(this.dataset.rentalId)">
+                                                <i class="fas fa-check mr-1"></i> 반납
+                                            </button>
+                                            <!-- 반납완료된 경우 반납 완료 표시 -->
+                                            <span
+                                                th:if="${rental.rentalStatus == 'RETURNED' or rental.rentalStatus == 1}"
+                                                class="bg-gray-100 text-gray-600 px-3 py-1 rounded text-xs flex items-center">
+                                                <i class="fas fa-check-circle mr-1"></i> 반납완료
+                                            </span>
+                                            <!-- 모든 상태에서 삭제 가능 (히스토리 삭제용) -->
+                                            <button type="button"
+                                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs flex items-center"
+                                                th:data-rental-id="${rental.id}"
+                                                onclick="deleteRental(this.dataset.rentalId)">
+                                                <i class="fas fa-trash mr-1"></i> 삭제
+                                            </button>
+                                        </div>
+                                        <!-- 일반 회원에게는 조회 전용 메시지 표시 -->
+                                        <div th:if="${loginMember == null or (loginMember.role != 'ADMIN' and loginMember.role != 1)}"
+                                            class="text-center">
+                                            <span class="text-gray-500 text-sm">
+                                                <i class="fas fa-eye mr-1"></i>조회 전용
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Rentals Tab -->
+            <div id="active-rentals" class="tab-pane hidden">
+                <!-- Empty State for Active Rentals -->
+                <div th:if="${activeRentals == 0}" class="text-center py-16">
+                    <i class="fas fa-book text-gray-400 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">현재 대여 중인 도서가 없습니다</h3>
+                    <p class="text-gray-500 mb-6">새로운 도서 대여를 시작해보세요.</p>
+                    <button
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center mx-auto transition-colors"
+                        onclick="openRentalModal()">
+                        <i class="fas fa-plus mr-2"></i>도서 대여하기
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md overflow-hidden" th:if="${activeRentals > 0}">
+                    <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <h5 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-book mr-2 text-yellow-600"></i>대여 중 목록
+                        </h5>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6" th:if="${rentals != null}">
+                        <div th:each="rental : ${rentals}"
+                            th:if="${rental.rentalStatus == 'RENTED' or rental.rentalStatus == 0 or rental.rentalStatus == 'OVERDUE' or rental.rentalStatus == 2}"
+                            class="bg-white rounded-lg shadow-md border-l-4"
+                            th:classappend="${rental.rentalStatus == 'OVERDUE' or rental.rentalStatus == 2} ? 'border-red-500' : 'border-yellow-500'">
+                            <div class="text-white px-4 py-2 rounded-t-lg"
+                                th:classappend="${rental.rentalStatus == 'OVERDUE' or rental.rentalStatus == 2} ? 'bg-red-500' : 'bg-yellow-500'">
+                                <h6 class="font-semibold flex items-center">
+                                    <i
+                                        th:class="${rental.rentalStatus == 'OVERDUE' or rental.rentalStatus == 2} ? 'fas fa-exclamation-triangle mr-2' : 'fas fa-book mr-2'"></i>
+                                    <span
+                                        th:text="${rental.rentalStatus == 'OVERDUE' or rental.rentalStatus == 2} ? '연체' : '대여 중'">대여
+                                        중</span>
+                                </h6>
+                            </div>
+                            <div class="p-4">
+                                <h5 class="text-lg font-semibold text-gray-900 mb-3" th:text="${rental.bookTitle}">도서명
+                                </h5>
+                                <div class="space-y-2 text-sm text-gray-600 mb-4">
+                                    <p><span class="font-medium">회원:</span> <span
+                                            th:text="${rental.memberName}">홍길동</span>
+                                    </p>
+                                    <p><span class="font-medium">저자:</span> <span
+                                            th:text="${rental.bookAuthor}">저자</span>
+                                    </p>
+                                    <p><span class="font-medium">대여일:</span> <span class="rental-date"
+                                            th:data-date="${rental.rentalDate}">2024-01-01</span></p>
+                                    <p><span class="font-medium">반납예정일:</span> <span class="due-date"
+                                            th:data-date="${rental.dueDate}">2024-01-15</span></p>
+                                </div>
+                                <!-- 관리자만 관리 버튼들 표시 -->
+                                <div
+                                    th:if="${loginMember != null and (loginMember.role == 'ADMIN' or loginMember.role == 1)}">
+                                    <button type="button"
+                                        class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md flex items-center justify-center transition-colors mb-2"
+                                        th:data-rental-id="${rental.id}" onclick="returnBook(this.dataset.rentalId)">
+                                        <i class="fas fa-check-circle mr-2"></i>반납 처리
+                                    </button>
+                                    <button type="button"
+                                        class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md flex items-center justify-center transition-colors"
+                                        th:data-rental-id="${rental.id}" onclick="deleteRental(this.dataset.rentalId)">
+                                        <i class="fas fa-trash mr-2"></i>삭제
+                                    </button>
+                                </div>
+                                <!-- 일반 회원에게는 조회 전용 메시지 표시 -->
+                                <div th:if="${loginMember == null or (loginMember.role != 'ADMIN' and loginMember.role != 1)}"
+                                    class="text-center py-4">
+                                    <span class="text-gray-500 text-sm">
+                                        <i class="fas fa-eye mr-1"></i>조회 전용
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Rentals Tab -->
+            <div id="completed-rentals" class="tab-pane hidden">
+                <!-- Empty State for Completed Rentals -->
+                <div th:if="${completedRentals == 0}" class="text-center py-16">
+                    <i class="fas fa-check-circle text-gray-400 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">완료된 대여가 없습니다</h3>
+                    <p class="text-gray-500">반납 완료된 대여 기록이 여기에 표시됩니다.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md overflow-hidden" th:if="${completedRentals > 0}">
+                    <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <h5 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-check-circle mr-2 text-green-600"></i>대여 완료 목록
+                        </h5>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        대여ID</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        회원</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        도서</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        저자</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        대여일</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        반납예정일</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        반납일</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        상태</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        관리</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr th:each="rental : ${rentals}"
+                                    th:if="${rental.rentalStatus == 'RETURNED' or rental.rentalStatus == 1}"
+                                    class="hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                        th:text="${rental.id}">1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900" th:text="${rental.memberName}">
+                                            홍길동</div>
+                                        <div class="text-sm text-gray-500">ID: <span
+                                                th:text="${rental.memberId}">1</span></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900" th:text="${rental.bookTitle}">도서명
+                                        </div>
+                                        <div class="text-sm text-gray-500">ID: <span th:text="${rental.bookId}">1</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                        th:text="${rental.bookAuthor}">저자</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 rental-date"
+                                        th:data-date="${rental.rentalDate}">2024-01-01</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 due-date"
+                                        th:data-date="${rental.dueDate}">2024-01-15</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 return-date"
+                                        th:data-date="${rental.returnDate}">-</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                            <i class="fas fa-check-circle mr-1"></i>반납완료
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <!-- 관리자만 삭제 버튼 표시 -->
+                                        <div th:if="${loginMember != null and (loginMember.role == 'ADMIN' or loginMember.role == 1)}"
+                                            class="flex space-x-2">
+                                            <!-- 반납완료된 경우 삭제만 가능 -->
+                                            <button type="button"
+                                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs flex items-center"
+                                                th:data-rental-id="${rental.id}"
+                                                onclick="deleteRental(this.dataset.rentalId)">
+                                                <i class="fas fa-trash mr-1"></i> 삭제
+                                            </button>
+                                        </div>
+                                        <!-- 일반 회원에게는 조회 전용 메시지 표시 -->
+                                        <div th:if="${loginMember == null or (loginMember.role != 'ADMIN' and loginMember.role != 1)}"
+                                            class="text-center">
+                                            <span class="text-gray-500 text-sm">
+                                                <i class="fas fa-eye mr-1"></i>조회 전용
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Overdue Rentals Tab -->
+            <div id="overdue-rentals" class="tab-pane hidden">
+                <!-- Empty State for Overdue Rentals -->
+                <div th:if="${overdueRentals == 0}" class="text-center py-16">
+                    <i class="fas fa-exclamation-triangle text-gray-400 text-6xl mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-600 mb-2">연체된 대여가 없습니다</h3>
+                    <p class="text-gray-500">연체된 대여 기록이 여기에 표시됩니다.</p>
+                </div>
+
+                <div class="bg-white rounded-lg shadow-md overflow-hidden" th:if="${overdueRentals > 0}">
+                    <div class="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                        <h5 class="text-lg font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-exclamation-triangle mr-2 text-red-600"></i>연체 목록
+                        </h5>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        대여ID</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        회원</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        도서</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        저자</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        대여일</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        반납예정일</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        연체일수</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        상태</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        관리</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr th:each="rental : ${rentals}"
+                                    th:if="${rental.rentalStatus == 'OVERDUE' or rental.rentalStatus == 2}"
+                                    class="hover:bg-gray-50 bg-red-50">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                        th:text="${rental.id}">1</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900" th:text="${rental.memberName}">
+                                            홍길동</div>
+                                        <div class="text-sm text-gray-500">ID: <span
+                                                th:text="${rental.memberId}">1</span></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900" th:text="${rental.bookTitle}">도서명
+                                        </div>
+                                        <div class="text-sm text-gray-500">ID: <span th:text="${rental.bookId}">1</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                                        th:text="${rental.bookAuthor}">저자</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 rental-date"
+                                        th:data-date="${rental.rentalDate}">2024-01-01</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-medium due-date"
+                                        th:data-date="${rental.dueDate}">2024-01-15</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600 font-bold">
+                                        <span class="bg-red-100 px-2 py-1 rounded">연체</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span
+                                            class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>연체
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <!-- 관리자만 관리 버튼들 표시 -->
+                                        <div th:if="${loginMember != null and (loginMember.role == 'ADMIN' or loginMember.role == 1)}"
+                                            class="flex space-x-2">
+                                            <button type="button"
+                                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-xs flex items-center"
+                                                th:data-rental-id="${rental.id}"
+                                                onclick="returnBook(this.dataset.rentalId)">
+                                                <i class="fas fa-check mr-1"></i> 반납
+                                            </button>
+                                            <button type="button"
+                                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-xs flex items-center"
+                                                th:data-rental-id="${rental.id}"
+                                                onclick="deleteRental(this.dataset.rentalId)">
+                                                <i class="fas fa-trash mr-1"></i> 삭제
+                                            </button>
+                                        </div>
+                                        <!-- 일반 회원에게는 조회 전용 메시지 표시 -->
+                                        <div th:if="${loginMember == null or (loginMember.role != 'ADMIN' and loginMember.role != 1)}"
+                                            class="text-center">
+                                            <span class="text-gray-500 text-sm">
+                                                <i class="fas fa-eye mr-1"></i>조회 전용
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rental Modal -->
+        <div id="rentalModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto">
+                <div class="flex items-center justify-between p-6 border-b border-gray-200">
+                    <h5 class="text-xl font-semibold text-gray-900 flex items-center">
+                        <i class="fas fa-plus mr-2 text-blue-600"></i>도서 대여
+                    </h5>
+                    <button type="button" class="text-gray-400 hover:text-gray-600" onclick="closeRentalModal()">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <form id="rentalForm" class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="memberId" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-user mr-1 text-blue-500"></i>회원 선택
+                            </label>
+                            <select id="memberId" name="memberId" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">회원을 선택하세요</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="bookId" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-book mr-1 text-green-500"></i>도서 선택
+                            </label>
+                            <select id="bookId" name="bookId" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">도서를 선택하세요</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mt-6">
+                        <label for="remarks" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-comment mr-1 text-yellow-500"></i>비고
+                        </label>
+                        <textarea id="remarks" name="remarks" rows="4"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="비고사항을 입력하세요 (선택사항)"></textarea>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                        <button type="button" onclick="closeRentalModal()"
+                            class="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-md transition-colors">
+                            취소
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center transition-colors">
+                            <i class="fas fa-check mr-2"></i>대여 등록
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            // 날짜 포맷팅 함수
+            function formatDate( dateString ) {
+                if ( !dateString || dateString === 'null' ) return '-';
+                const date = new Date( dateString );
+                return date.toISOString().split( 'T' )[ 0 ]; // yyyy-MM-dd 형식
+            }
+
+            // 페이지 로드 시 날짜 포맷팅 적용
+            document.addEventListener( 'DOMContentLoaded', function () {
+                // 모든 날짜 요소에 포맷팅 적용
+                document.querySelectorAll( '.rental-date, .due-date, .return-date' ).forEach( function ( element ) {
+                    const dateValue = element.getAttribute( 'data-date' );
+                    element.textContent = formatDate( dateValue );
+                } );
+            } );
+
+            // 탭 전환 함수
+            function showTab( tabId, buttonElement ) {
+                // 모든 탭 숨기기
+                document.querySelectorAll( '.tab-pane' ).forEach( function ( tab ) {
+                    tab.classList.add( 'hidden' );
+                    tab.classList.remove( 'active' );
+                } );
+
+                // 모든 탭 버튼 비활성화
+                document.querySelectorAll( '.tab-button' ).forEach( function ( button ) {
+                    button.classList.remove( 'border-blue-500', 'text-blue-600' );
+                    button.classList.add( 'border-transparent', 'text-gray-500' );
+                } );
+
+                // 선택된 탭 표시
+                document.getElementById( tabId ).classList.remove( 'hidden' );
+                document.getElementById( tabId ).classList.add( 'active' );
+
+                // 선택된 탭 버튼 활성화
+                buttonElement.classList.remove( 'border-transparent', 'text-gray-500' );
+                buttonElement.classList.add( 'border-blue-500', 'text-blue-600' );
+            }
+
+            // 대여 모달 열기
+            function openRentalModal() {
+                loadMembers();
+                loadBooks();
+                const modal = document.getElementById( 'rentalModal' );
+                if ( modal ) {
+                    modal.classList.remove( 'hidden' );
+                    modal.classList.add( 'flex' );
+                }
+            }
+
+            // 대여 모달 닫기
+            function closeRentalModal() {
+                const modal = document.getElementById( 'rentalModal' );
+                const form = document.getElementById( 'rentalForm' );
+                if ( modal ) {
+                    modal.classList.add( 'hidden' );
+                    modal.classList.remove( 'flex' );
+                }
+                if ( form ) {
+                    form.reset();
+                }
+            }
+
+            // 활성 회원 목록 로드
+            function loadMembers() {
+                fetch( '/rentals/api/members' )
+                    .then( response => response.json() )
+                    .then( data => {
+                        const memberSelect = document.getElementById( 'memberId' );
+                        memberSelect.innerHTML = '<option value="">회원을 선택하세요</option>';
+
+                        if ( data.success && data.data ) {
+                            data.data.forEach( member => {
+                                const option = document.createElement( 'option' );
+                                option.value = member.id;
+                                option.textContent = `${ member.name } (${ member.email })`;
+                                memberSelect.appendChild( option );
+                            } );
+                        }
+                    } )
+                    .catch( error => {
+                        showAlert( '회원 목록 로드에 실패했습니다.', 'error' );
+                    } );
+            }
+
+            // 대여 가능한 도서 목록 로드
+            function loadBooks() {
+                fetch( '/rentals/api/books' )
+                    .then( response => response.json() )
+                    .then( data => {
+                        const bookSelect = document.getElementById( 'bookId' );
+                        bookSelect.innerHTML = '<option value="">도서를 선택하세요</option>';
+
+                        if ( data.success && data.data ) {
+                            data.data.forEach( book => {
+                                const option = document.createElement( 'option' );
+                                option.value = book.id;
+                                option.textContent = `${ book.title } - ${ book.author }`;
+                                bookSelect.appendChild( option );
+                            } );
+                        }
+                    } )
+                    .catch( error => {
+                        showAlert( '도서 목록 로드에 실패했습니다.', 'error' );
+                    } );
+            }
+
+            // 대여 등록
+            document.getElementById( 'rentalForm' ).addEventListener( 'submit', function ( e ) {
+                e.preventDefault();
+
+                const formData = new FormData( this );
+                const rentalData = {
+                    memberId: parseInt( formData.get( 'memberId' ) ),
+                    bookId: parseInt( formData.get( 'bookId' ) ),
+                    remarks: formData.get( 'remarks' ) || ''
+                };
+
+                fetch( '/rentals', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify( rentalData )
+                } )
+                    .then( response => response.json() )
+                    .then( data => {
+                        if ( data.success ) {
+                            showAlert( '도서가 성공적으로 대여되었습니다.', 'success' );
+                            closeRentalModal();
+                            location.reload();
+                        } else {
+                            showAlert( '대여 등록에 실패했습니다: ' + ( data.message || '알 수 없는 오류' ), 'error' );
+                        }
+                    } )
+                    .catch( error => {
+                        showAlert( '대여 등록 중 오류가 발생했습니다.', 'error' );
+                    } );
+            } );
+
+            // 도서 반납
+            function returnBook( rentalId ) {
+                if ( confirm( '정말로 이 도서를 반납하시겠습니까?' ) ) {
+                    fetch( `/rentals/${ rentalId }/return`, {
+                        method: 'PATCH'
+                    } )
+                        .then( response => response.json() )
+                        .then( data => {
+                            if ( data.success ) {
+                                showAlert( '도서가 성공적으로 반납되었습니다.', 'success' );
+                                location.reload();
+                            } else {
+                                showAlert( '반납 처리에 실패했습니다: ' + ( data.message || '알 수 없는 오류' ), 'error' );
+                            }
+                        } )
+                        .catch( error => {
+                            showAlert( '반납 처리 중 오류가 발생했습니다.', 'error' );
+                        } );
+                }
+            }
+
+            // 대여 기록 삭제
+            function deleteRental( rentalId ) {
+                if ( confirm( '정말로 이 대여 기록을 삭제하시겠습니까?' ) ) {
+                    fetch( `/rentals/${ rentalId }`, {
+                        method: 'DELETE'
+                    } )
+                        .then( response => response.json() )
+                        .then( data => {
+                            if ( data.success ) {
+                                showAlert( '대여 기록이 성공적으로 삭제되었습니다.', 'success' );
+                                location.reload();
+                            } else {
+                                showAlert( '삭제에 실패했습니다: ' + ( data.message || '알 수 없는 오류' ), 'error' );
+                            }
+                        } )
+                        .catch( error => {
+                            showAlert( '삭제 중 오류가 발생했습니다.', 'error' );
+                        } );
+                }
+            }
+
+            // Close modal when clicking outside
+            const rentalModal = document.getElementById( 'rentalModal' );
+            if ( rentalModal ) {
+                rentalModal.addEventListener( 'click', function ( e ) {
+                    if ( e.target === this ) {
+                        closeRentalModal();
+                    }
+                } );
+            }
+        </script>
     </div>
-</div>
 </body>
+
 </html>

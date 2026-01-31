@@ -45,12 +45,12 @@ public class Book {
     private String category;
 
     @ColumnDefault("1")
-    @Column(name = "total_quantity", columnDefinition = "int UNSIGNED not null")
-    private Integer totalQuantity;
+    @Column(name = "total_quantity", nullable = false)
+    private Integer totalQuantity = 1;
 
     @ColumnDefault("1")
-    @Column(name = "available_qty", columnDefinition = "int UNSIGNED not null")
-    private Integer availableQty;
+    @Column(name = "available_qty", nullable = false)
+    private Integer availableQty = 1;
 
     @NotNull
     @Enumerated(EnumType.ORDINAL)
@@ -66,5 +66,17 @@ public class Book {
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        Instant now = Instant.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
+    }
 
 }

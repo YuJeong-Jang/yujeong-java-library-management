@@ -24,7 +24,7 @@ public class Member {
 
     @Size(max = 50)
     @NotNull
-    @Column(name = "login_id", nullable = false, length = 50)
+    @Column(name = "login_id", nullable = false, length = 50, unique = true)
     private String loginId;
 
     @Size(max = 255)
@@ -39,7 +39,7 @@ public class Member {
 
     @Size(max = 100)
     @NotNull
-    @Column(name = "email", nullable = false, length = 100)
+    @Column(name = "email", nullable = false, length = 100, unique = true)
     private String email;
 
     @Size(max = 20)
@@ -54,12 +54,10 @@ public class Member {
     @Column(name = "role")
     private Enums.MemberRole role = Enums.MemberRole.USER;
 
-    @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
-    @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP")
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
@@ -67,4 +65,15 @@ public class Member {
     @OneToMany(mappedBy = "member")
     private Set<Rental> rentals = new LinkedHashSet<>();
 
+    @PrePersist
+    public void prePersist() {
+        Instant now = Instant.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = Instant.now();
+    }
 }

@@ -1,0 +1,155 @@
+package com.book.library.frontend.controller;
+
+import com.book.library.frontend.service.BookService;
+import com.book.library.frontend.service.MemberService;
+import com.book.library.frontend.service.RentalService;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@Controller
+@RequestMapping("/rentals")
+@RequiredArgsConstructor
+public class RentalController {
+    
+    private final RentalService rentalService;
+    private final MemberService memberService;
+    private final BookService bookService;
+    
+    @GetMapping
+    public String rentals(Model model, HttpSession session) {
+        // 로그인 정보 추가
+        Map<String, Object> loginMember = (Map<String, Object>) session.getAttribute("loginMember");
+        model.addAttribute("loginMember", loginMember);
+        
+        try {
+            List<Map<String, Object>> rentals = rentalService.getAllRentals();
+            model.addAttribute("rentals", rentals);
+            
+            // 통계 계산
+            long totalRentals = rentals.size();
+            long activeRentals = rentals.stream()
+                .filter(rental -> {
+                    Object status = rental.get("rentalStatus");
+                    return "RENTED".equals(status) || "OVERDUE".equals(status) || 
+                           Integer.valueOf(0).equals(status) || Integer.valueOf(2).equals(status);
+                })
+                .count();
+            long completedRentals = rentals.stream()
+                .filter(rental -> {
+                    Object status = rental.get("rentalStatus");
+                    return "RETURNED".equals(status) || Integer.valueOf(1).equals(status);
+                })
+                .count();
+            long overdueRentals = rentals.stream()
+                .filter(rental -> {
+                    Object status = rental.get("rentalStatus");
+                    return "OVERDUE".equals(status) || Integer.valueOf(2).equals(status);
+                })
+                .count();
+            
+            model.addAttribute("totalRentals", totalRentals);
+            model.addAttribute("activeRentals", activeRentals);
+            model.addAttribute("completedRentals", completedRentals);
+            model.addAttribute("overdueRentals", overdueRentals);
+            
+        } catch (Exception e) {
+            model.addAttribute("rentals", java.util.Collections.emptyList());
+            model.addAttribute("error", "대여 목록을 불러오는 중 오류가 발생했습니다.");
+            model.addAttribute("totalRentals", 0);
+            model.addAttribute("activeRentals", 0);
+            model.addAttribute("completedRentals", 0);
+            model.addAttribute("overdueRentals", 0);
+        }
+        return "rentals/rentals";
+    }
+    
+    // 테스트 엔드포인트 - 백엔드 연결 확인
+    @GetMapping("/test")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> testRentalService() {
+        Map<String, Object> result = rentalService.testConnection();
+        return ResponseEntity.ok(result);
+    }
+    
+    @PostMapping
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> createRental(@RequestBody Map<String, Object> rentalData) {
+        Map<String, Object> result = rentalService.createRental(rentalData);
+        return ResponseEntity.ok(result);
+    }
+    
+    @PatchMapping("/{id}/return")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> returnBook(@PathVariable Long id) {
+        Map<String, Object> result = rentalService.returnBook(id);
+        return ResponseEntity.ok(result);
+    }
+    
+    @DeleteMapping("/{id}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> deleteRental(@PathVariable Long id) {
+        Map<String, Object> result = rentalService.deleteRental(id);
+        return ResponseEntity.ok(result);
+    }
+    
+    // API 엔드포인트 - 대여 목록
+    @GetMapping("/api")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getAllRentalsApi() {
+        try {
+            List<Map<String, Object>> rentals = rentalService.getAllRentals();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", rentals
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of(
+                "success", false,
+                "message", "대여 목록을 불러오는 중 오류가 발생했습니다."
+            ));
+        }
+    }
+    
+    // API 엔드포인트 - 회원 목록 (대여 등록용 - 활성 회원만)
+    @GetMapping("/api/members")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getMembersForRental() {
+        try {
+            List<Map<String, Object>> members = memberService.getActiveMembers();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", members
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of(
+                "success", false,
+                "message", "회원 목록을 불러오는 중 오류가 발생했습니다."
+            ));
+        }
+    }
+    
+    // API 엔드포인트 - 도서 목록
+    @GetMapping("/api/books")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getBooksForRental() {
+        try {
+            List<Map<String, Object>> books = bookService.getAllBooks();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", books
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Map.of(
+                "success", false,
+                "message", "도서 목록을 불러오는 중 오류가 발생했습니다."
+            ));
+        }
+    }
+}

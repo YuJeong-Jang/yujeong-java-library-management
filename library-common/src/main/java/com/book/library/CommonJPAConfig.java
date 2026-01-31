@@ -5,8 +5,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @Configuration
-@EntityScan(basePackages = "com.book.library")           // 모든 domain 스캔
-@EnableJpaRepositories(basePackages = "com.book.library") // 모든 repository 스캔
+@EntityScan(basePackages = "com.book.library")
+@EnableJpaRepositories(basePackages = "com.book.library")
 public class CommonJPAConfig {
 }
 

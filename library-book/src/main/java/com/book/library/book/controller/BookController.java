@@ -1,10 +1,14 @@
 package com.book.library.book.controller;
 
-import com.book.library.book.domain.Book;
-import com.book.library.book.repository.BookRepository;
+import com.book.library.book.dto.BookCreateRequest;
+import com.book.library.book.dto.BookUpdateRequest;
 import com.book.library.book.response.BookResponse;
+import com.book.library.book.service.BookService;
+import com.book.library.common.dto.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,65 +16,56 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/library/books")
+@RequestMapping("/api/books")
 @RequiredArgsConstructor
 public class BookController {
-    private final BookRepository bookRepository;
+    
+    private final BookService bookService;
 
-    // 1) 전체 목록 조회 (GET /library/books)
     @GetMapping
-    public List<BookResponse> getBooks() {
-        return bookRepository.findAll().stream()
-                .map(BookResponse::from)
-                .toList();
+    public ResponseEntity<ApiResponse<List<BookResponse>>> getAllBooks() {
+        List<BookResponse> books = bookService.getAllBooks();
+        return ResponseEntity.ok(ApiResponse.success(books));
+    }
+    
+    @GetMapping("/page")
+    public ResponseEntity<ApiResponse<Page<BookResponse>>> getBooks(Pageable pageable) {
+        Page<BookResponse> books = bookService.getBooks(pageable);
+        return ResponseEntity.ok(ApiResponse.success(books));
     }
 
-    // 2) 단건 조회 (GET /library/books/{id})
     @GetMapping("/{id}")
-    public ResponseEntity<BookResponse> getBook(@PathVariable Long id) {
-        return bookRepository.findById(id)
-                .map(BookResponse::from)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<ApiResponse<BookResponse>> getBook(@PathVariable Long id) {
+        BookResponse book = bookService.getBook(id);
+        return ResponseEntity.ok(ApiResponse.success(book));
+    }
+    
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<BookResponse>>> searchBooks(@RequestParam String keyword) {
+        List<BookResponse> books = bookService.searchBooks(keyword);
+        return ResponseEntity.ok(ApiResponse.success(books));
     }
 
-    // 3) 생성 (POST /library/books)
     @PostMapping
-    public ResponseEntity<BookResponse> createBook(@Valid @RequestBody Book request) {
-        Book saved = bookRepository.save(request);
+    public ResponseEntity<ApiResponse<BookResponse>> createBook(@Valid @RequestBody BookCreateRequest request) {
+        BookResponse book = bookService.createBook(request);
         return ResponseEntity
-                .created(URI.create("/library/books/" + saved.getId()))
-                .body(BookResponse.from(saved));
+                .created(URI.create("/api/books/" + book.getId()))
+                .body(ApiResponse.success("도서가 성공적으로 등록되었습니다.", book));
     }
 
-    // 4) 수정 (PUT /library/books/{id} 전체 수정)
     @PutMapping("/{id}")
-    public ResponseEntity<BookResponse> updateBook(
+    public ResponseEntity<ApiResponse<BookResponse>> updateBook(
             @PathVariable Long id,
-            @Valid @RequestBody Book request
+            @Valid @RequestBody BookUpdateRequest request
     ) {
-        return bookRepository.findById(id)
-                .map(existing -> {
-                    existing.setTitle(request.getTitle());
-                    existing.setAuthor(request.getAuthor());
-                    existing.setIsbn(request.getIsbn());
-                    existing.setCategory(request.getCategory());
-                    existing.setTotalQuantity(request.getTotalQuantity());
-                    existing.setAvailableQty(request.getAvailableQty());
-                    existing.setStatus(request.getStatus());
-                    Book saved = bookRepository.save(existing);
-                    return ResponseEntity.ok(BookResponse.from(saved));
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        BookResponse book = bookService.updateBook(id, request);
+        return ResponseEntity.ok(ApiResponse.success("도서가 성공적으로 수정되었습니다.", book));
     }
 
-    // 5) 삭제 (DELETE /library/books/{id})
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
-        if (!bookRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        bookRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ApiResponse<Void>> deleteBook(@PathVariable Long id) {
+        bookService.deleteBook(id);
+        return ResponseEntity.ok(ApiResponse.success("도서가 성공적으로 삭제되었습니다.", null));
     }
 }

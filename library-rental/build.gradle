@@ -1,5 +1,4 @@
 plugins {
-    id 'java'
     id 'war'
     id 'org.springframework.boot' version '3.3.5'
     id 'io.spring.dependency-management' version '1.1.7'
@@ -10,9 +9,13 @@ version = '0.0.1-SNAPSHOT'
 description = 'library-rental'
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+}
+
+// Java 컴파일러에 -parameters 플래그 추가
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ['-parameters']
 }
 
 repositories {
@@ -21,11 +24,11 @@ repositories {
 
 dependencies {
     implementation project(':library-common')
-    implementation project(':library-frontend')
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    runtimeOnly 'com.mysql:mysql-connector-j:8.3.0'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
+
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 }
