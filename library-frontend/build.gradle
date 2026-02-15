@@ -1,38 +1,27 @@
-plugins {
-    id 'war'
-    id 'org.springframework.boot' version '3.3.5'
-    id 'io.spring.dependency-management' version '1.1.7'
-}
-
-group = 'com.book.library'
-version = '0.0.1-SNAPSHOT'
-description = 'library-frontend'
-
-java {
-    sourceCompatibility = '17'
-    targetCompatibility = '17'
-}
-
-// Java 컴파일러에 -parameters 플래그 추가
-tasks.withType(JavaCompile) {
-    options.compilerArgs += ['-parameters']
-}
-
-repositories {
-    mavenCentral()
-}
-
-springBoot {
-    mainClass.set('com.book.library.frontend.LibraryFrontendApplication')
-}
+// library-frontend - 웹 UI (JSP + HttpClient)
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect:3.4.0'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // Spring MVC
+    implementation 'org.springframework:spring-webmvc:6.1.1'
+    implementation 'org.springframework:spring-context:6.1.1'
+    implementation 'org.springframework:spring-web:6.1.1'
     
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    // Servlet & JSP
+    providedCompile 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+    providedCompile 'jakarta.servlet.jsp:jakarta.servlet.jsp-api:3.1.1'
+    implementation 'jakarta.servlet.jsp.jstl:jakarta.servlet.jsp.jstl-api:3.0.0'
+    implementation 'org.glassfish.web:jakarta.servlet.jsp.jstl:3.0.1'
+    
+    // JSON
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.16.0'
+    
+    // HTTP Client
+    implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
+}
+
+// JSP 파일 포함
+war {
+    from('src/main/webapp') {
+        into ''
+    }
 }

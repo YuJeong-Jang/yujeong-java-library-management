@@ -15,7 +15,7 @@ public class RentalResponse {
     String memberName;
     Long bookId;
     String bookTitle;
-    Enums.RentalStatus rentalStatus;      // RENTED / OVERDUE / RETURNED
+    Enums.RentalStatus rentalStatus;
     Instant rentalDate;
     Instant dueDate;
     Instant returnDate;
@@ -24,10 +24,10 @@ public class RentalResponse {
     public static RentalResponse from(Rental rental) {
         return RentalResponse.builder()
                 .id(rental.getId())
-                .memberId(rental.getMember() != null ? rental.getMember().getId() : null)
-                .memberName(rental.getMember() != null ? rental.getMember().getName() : null)
-                .bookId(rental.getBook() != null ? rental.getBook().getId() : null)
-                .bookTitle(rental.getBook() != null ? rental.getBook().getTitle() : null)
+                .memberId(rental.getMemberId())
+                .memberName(null) // JDBC에서는 조인 필요
+                .bookId(rental.getBookId())
+                .bookTitle(null) // JDBC에서는 조인 필요
                 .rentalStatus(rental.getRentalStatus())
                 .rentalDate(rental.getRentalDate())
                 .dueDate(rental.getDueDate())

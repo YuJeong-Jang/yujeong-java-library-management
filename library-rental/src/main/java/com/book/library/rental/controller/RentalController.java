@@ -5,10 +5,7 @@ import com.book.library.common.exception.BusinessException;
 import com.book.library.rental.dto.RentalCreateRequest;
 import com.book.library.rental.dto.RentalResponse;
 import com.book.library.rental.service.RentalService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,12 +22,6 @@ public class RentalController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<RentalResponse>>> getAllRentals() {
         List<RentalResponse> rentals = rentalService.getAllRentals();
-        return ResponseEntity.ok(ApiResponse.success(rentals));
-    }
-    
-    @GetMapping("/page")
-    public ResponseEntity<ApiResponse<Page<RentalResponse>>> getRentals(Pageable pageable) {
-        Page<RentalResponse> rentals = rentalService.getRentals(pageable);
         return ResponseEntity.ok(ApiResponse.success(rentals));
     }
     
@@ -52,25 +43,8 @@ public class RentalController {
         return ResponseEntity.ok(ApiResponse.success(rentals));
     }
     
-    @GetMapping("/active")
-    public ResponseEntity<ApiResponse<List<RentalResponse>>> getActiveRentals() {
-        List<RentalResponse> rentals = rentalService.getActiveRentals();
-        return ResponseEntity.ok(ApiResponse.success(rentals));
-    }
-    
-    @GetMapping("/overdue")
-    public ResponseEntity<ApiResponse<List<RentalResponse>>> getOverdueRentals() {
-        List<RentalResponse> rentals = rentalService.getOverdueRentals();
-        return ResponseEntity.ok(ApiResponse.success(rentals));
-    }
-    
-    @GetMapping("/test")
-    public ResponseEntity<ApiResponse<String>> testEndpoint() {
-        return ResponseEntity.ok(ApiResponse.success("Rental service is working!", "test"));
-    }
-    
     @PostMapping
-    public ResponseEntity<ApiResponse<RentalResponse>> createRental(@Valid @RequestBody RentalCreateRequest request) {
+    public ResponseEntity<ApiResponse<RentalResponse>> createRental(@RequestBody RentalCreateRequest request) {
         try {
             RentalResponse rental = rentalService.createRental(request);
             ApiResponse<RentalResponse> response = ApiResponse.success("도서가 성공적으로 대여되었습니다.", rental);
@@ -95,10 +69,9 @@ public class RentalController {
         rentalService.deleteRental(id);
         return ResponseEntity.ok(ApiResponse.success("대여 기록이 성공적으로 삭제되었습니다.", null));
     }
-    
-    @PostMapping("/update-overdue")
-    public ResponseEntity<ApiResponse<Void>> updateOverdueStatus() {
-        rentalService.updateOverdueStatus();
-        return ResponseEntity.ok(ApiResponse.success("연체 상태가 업데이트되었습니다.", null));
+
+    @GetMapping("/health")
+    public String health() {
+        return "OK";
     }
 }

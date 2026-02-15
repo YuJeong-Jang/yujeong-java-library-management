@@ -155,8 +155,8 @@ public class HomeController {
         return ResponseEntity.ok(bookService.searchBooks(keyword));
     }
     
-    @GetMapping("/test")
-    public String testPage() {
-        return "test";
+    @GetMapping("/health")
+    public String health() {
+        return "OK";  // 200 OK만 반환, DB 조회 X
     }
 }

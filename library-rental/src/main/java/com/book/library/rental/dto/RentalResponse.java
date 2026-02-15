@@ -27,11 +27,11 @@ public class RentalResponse {
     public static RentalResponse from(Rental rental) {
         return new RentalResponse(
             rental.getId(),
-            rental.getMember().getId(),
-            rental.getMember().getName(),
-            rental.getBook().getId(),
-            rental.getBook().getTitle(),
-            rental.getBook().getAuthor(),
+            rental.getMemberId(),
+            null, // memberName - JDBC에서는 조인 필요
+            rental.getBookId(),
+            null, // bookTitle - JDBC에서는 조인 필요
+            null, // bookAuthor - JDBC에서는 조인 필요
             rental.getRentalStatus(),
             rental.getRentalDate(),
             rental.getDueDate(),

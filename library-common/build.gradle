@@ -1,36 +1,12 @@
-// library-common/build.gradle
+// library-common - 도메인/DTO만 (순수 JDBC)
 
-plugins {
-    id 'java-library'
-    id 'io.spring.dependency-management' version '1.1.7'
-}
-
-java {
-    sourceCompatibility = '17'
-    targetCompatibility = '17'
-}
-
-repositories {
-    mavenCentral()
-    gradlePluginPortal()
-}
-
-// Java 컴파일러에 -parameters 플래그 추가
-tasks.withType(JavaCompile) {
-    options.compilerArgs += ['-parameters']
-}
+apply plugin: 'java-library'
 
 dependencies {
-    api 'org.springframework.boot:spring-boot-starter-validation'
-    api 'org.springframework.boot:spring-boot-starter-web'
-    api 'org.springframework.boot:spring-boot-starter-data-jpa'
-    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-}
-
-dependencyManagement {
-    imports {
-        mavenBom 'org.springframework.boot:spring-boot-dependencies:3.3.5'
-    }
+    // 도메인/DTO에 필요한 최소 의존성만
+    api 'com.fasterxml.jackson.core:jackson-annotations:2.16.0'
+    api 'org.springframework:spring-context:6.1.1'
+    api 'org.springframework:spring-jdbc:6.1.1'
+    api 'org.springframework:spring-tx:6.1.1'
+    api 'mysql:mysql-connector-java:8.0.33'
 }

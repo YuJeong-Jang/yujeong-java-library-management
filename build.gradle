@@ -1,20 +1,43 @@
-plugins {
-    id 'java'
-    id 'war'
-    id 'io.spring.dependency-management' version '1.1.7'
-}
-
-group = 'com.book'
-version = '0.0.1-SNAPSHOT'
-description = 'yujeong-java-library-management'
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+allprojects {
+    repositories {
+        mavenCentral()
     }
 }
 
-repositories {
-    mavenCentral()
-    gradlePluginPortal()
+subprojects {
+    apply plugin: 'java'
+    
+    group = 'com.book.library'
+    version = '0.0.1-SNAPSHOT'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    
+    tasks.withType(JavaCompile) {
+        options.compilerArgs += ['-parameters']
+    }
+
+    // 모든 모듈 공통 의존성
+    dependencies {
+        compileOnly 'org.projectlombok:lombok:1.18.30'
+        annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    }
+}
+
+// WAR 모듈 공통 설정
+configure(subprojects.findAll { it.name != 'library-common' }) {
+    apply plugin: 'war'
+    
+    war {
+        enabled = true
+        archiveClassifier = ''
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        exclude '**/test/**', '**/*.md', '**/package-info.class'
+    }
+    
+    jar {
+        enabled = false
+    }
 }

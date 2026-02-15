@@ -5,10 +5,7 @@ import com.book.library.book.dto.BookUpdateRequest;
 import com.book.library.book.response.BookResponse;
 import com.book.library.book.service.BookService;
 import com.book.library.common.dto.ApiResponse;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,12 +24,6 @@ public class BookController {
         List<BookResponse> books = bookService.getAllBooks();
         return ResponseEntity.ok(ApiResponse.success(books));
     }
-    
-    @GetMapping("/page")
-    public ResponseEntity<ApiResponse<Page<BookResponse>>> getBooks(Pageable pageable) {
-        Page<BookResponse> books = bookService.getBooks(pageable);
-        return ResponseEntity.ok(ApiResponse.success(books));
-    }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<BookResponse>> getBook(@PathVariable Long id) {
@@ -47,7 +38,7 @@ public class BookController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<BookResponse>> createBook(@Valid @RequestBody BookCreateRequest request) {
+    public ResponseEntity<ApiResponse<BookResponse>> createBook(@RequestBody BookCreateRequest request) {
         BookResponse book = bookService.createBook(request);
         return ResponseEntity
                 .created(URI.create("/api/books/" + book.getId()))
@@ -57,7 +48,7 @@ public class BookController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<BookResponse>> updateBook(
             @PathVariable Long id,
-            @Valid @RequestBody BookUpdateRequest request
+            @RequestBody BookUpdateRequest request
     ) {
         BookResponse book = bookService.updateBook(id, request);
         return ResponseEntity.ok(ApiResponse.success("도서가 성공적으로 수정되었습니다.", book));
@@ -67,5 +58,10 @@ public class BookController {
     public ResponseEntity<ApiResponse<Void>> deleteBook(@PathVariable Long id) {
         bookService.deleteBook(id);
         return ResponseEntity.ok(ApiResponse.success("도서가 성공적으로 삭제되었습니다.", null));
+    }
+
+    @GetMapping("/health")
+    public String health() {
+        return "OK";
     }
 }

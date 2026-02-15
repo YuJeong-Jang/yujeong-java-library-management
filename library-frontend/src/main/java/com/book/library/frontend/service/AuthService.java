@@ -1,138 +1,78 @@
 package com.book.library.frontend.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import java.util.List;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class AuthService {
     
-    private final WebClient memberServiceClient;
+    private final CloseableHttpClient httpClient;
+    private final ObjectMapper objectMapper;
     
-    public AuthService(@Qualifier("memberServiceWebClient") WebClient memberServiceClient) {
-        this.memberServiceClient = memberServiceClient;
-    }
+    @Qualifier("memberServiceUrl")
+    private final String memberServiceUrl;
     
     @SuppressWarnings("unchecked")
     public Map<String, Object> login(String loginId, String password) {
         try {
-            // 로그인 검증 API 사용
             Map<String, String> loginRequest = Map.of(
                 "loginId", loginId,
                 "password", password
             );
             
-            Map<String, Object> response = memberServiceClient
-                    .post()
-                    .uri("/api/members/login")
-                    .bodyValue(loginRequest)
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .block();
-
-            if (response != null && Boolean.TRUE.equals(response.get("success"))) {
-                Map<String, Object> member = (Map<String, Object>) response.get("data");
-                        
-                // 로그인 성공
-                return Map.of(
-                    "success", true,
-                    "message", response.get("message"),
-                    "data", member
-                );
-            } else {
-                return Map.of(
-                    "success", false,
-                    "message", response.get("message")
-                );
-            }
+            HttpPost request = new HttpPost(memberServiceUrl + "/api/members/login");
+            String jsonBody = objectMapper.writeValueAsString(loginRequest);
+            request.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
             
-        } catch (WebClientResponseException e) {
-            return Map.of(
-                "success", false,
-                "message", "로그인 중 오류가 발생했습니다: " + e.getMessage()
-            );
+            return httpClient.execute(request, response -> {
+                String responseBody = EntityUtils.toString(response.getEntity());
+                
+                if (response.getCode() >= 400) {
+                    if (response.getCode() == 401) {
+                        return Map.of("success", false, "message", "아이디 또는 비밀번호가 올바르지 않습니다.");
+                    }
+                    return Map.of("success", false, "message", "로그인 중 오류가 발생했습니다.");
+                }
+                
+                return objectMapper.readValue(responseBody, Map.class);
+            });
         } catch (Exception e) {
-            e.printStackTrace();
-            return Map.of(
-                "success", false,
-                "message", "로그인 중 오류가 발생했습니다: " + e.getMessage()
-            );
+            return Map.of("success", false, "message", "로그인 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
     
     public Map<String, Object> register(Map<String, Object> memberData) {
         try {
-            // 역할 설정 (0: USER, 1: ADMIN)
-            Integer role = (Integer) memberData.get("role");
-            if (role == null) {
-                role = 0; // 기본값은 일반 사용자
-            }
+            HttpPost request = new HttpPost(memberServiceUrl + "/api/members");
+            String jsonBody = objectMapper.writeValueAsString(memberData);
+            request.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
             
-            // phone 필드 처리 - 빈 문자열이면 null로 설정
-            String phone = (String) memberData.get("phone");
-            if (phone != null && phone.trim().isEmpty()) {
-                phone = null;
-            }
-            
-            // 회원 데이터 준비 - null 값 제외
-            Map<String, Object> requestData = new java.util.HashMap<>();
-            requestData.put("loginId", memberData.get("loginId"));
-            requestData.put("password", memberData.get("password"));
-            requestData.put("name", memberData.get("name"));
-            requestData.put("email", memberData.get("email"));
-            requestData.put("role", role);
-            
-            // phone이 null이 아닌 경우만 추가
-            if (phone != null && !phone.trim().isEmpty()) {
-                requestData.put("phone", phone);
-            }
-            
-            Map<String, Object> response = memberServiceClient
-                    .post()
-                    .uri("/api/members")
-                    .bodyValue(requestData)
-                    .retrieve()
-                    .bodyToMono(Map.class)
-                    .block();
-            
-            // ApiResponse 형식의 응답을 그대로 반환
-            if (response != null) {
-                return response;
-            } else {
-                return Map.of("success", false, "message", "서버로부터 응답이 없습니다.");
-            }
-            
-        } catch (WebClientResponseException e) {
-            // HTTP 에러 응답 처리
-            try {
-                // 에러 응답 본문을 파싱하여 반환
-                String responseBody = e.getResponseBodyAsString();
-                if (responseBody != null && !responseBody.isEmpty()) {
-                    // JSON 파싱 없이 간단한 에러 메시지 반환
-                    return Map.of(
-                        "success", false, 
-                        "message", "회원가입에 실패했습니다. 상태코드: " + e.getStatusCode() + ", 응답: " + responseBody
-                    );
+            return httpClient.execute(request, response -> {
+                String responseBody = EntityUtils.toString(response.getEntity());
+                
+                if (response.getCode() >= 400) {
+                    Map<String, Object> errorResult = objectMapper.readValue(responseBody, Map.class);
+                    String errorMessage = "회원가입에 실패했습니다.";
+                    if (errorResult.get("message") != null) {
+                        errorMessage = errorResult.get("message").toString();
+                    }
+                    return Map.of("success", false, "message", errorMessage);
                 }
-            } catch (Exception parseException) {
-                // 파싱 실패시 기본 에러 메시지
-            }
-            
-            return Map.of(
-                "success", false,
-                "message", "회원가입 중 오류가 발생했습니다: " + e.getMessage()
-            );
+                
+                return objectMapper.readValue(responseBody, Map.class);
+            });
         } catch (Exception e) {
-            e.printStackTrace();
-            return Map.of(
-                "success", false,
-                "message", "회원가입 중 오류가 발생했습니다: " + e.getMessage()
-            );
+            return Map.of("success", false, "message", "회원가입 중 오류가 발생했습니다: " + e.getMessage());
         }
     }
 }

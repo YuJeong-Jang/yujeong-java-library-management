@@ -9,10 +9,7 @@ import com.book.library.member.dto.MemberResponse;
 import com.book.library.member.dto.MemberUpdateRequest;
 import com.book.library.member.repository.MemberRepository;
 import com.book.library.member.service.MemberService;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,12 +31,6 @@ public class MemberController {
         return ResponseEntity.ok(ApiResponse.success(members));
     }
     
-    @GetMapping("/page")
-    public ResponseEntity<ApiResponse<Page<MemberResponse>>> getMembers(Pageable pageable) {
-        Page<MemberResponse> members = memberService.getMembers(pageable);
-        return ResponseEntity.ok(ApiResponse.success(members));
-    }
-    
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MemberResponse>> getMember(@PathVariable Long id) {
         MemberResponse member = memberService.getMember(id);
@@ -53,7 +44,7 @@ public class MemberController {
     }
     
     @PostMapping
-    public ResponseEntity<ApiResponse<MemberResponse>> createMember(@Valid @RequestBody MemberCreateRequest request) {
+    public ResponseEntity<ApiResponse<MemberResponse>> createMember(@RequestBody MemberCreateRequest request) {
         try {     
             MemberResponse member = memberService.createMember(request);
             return ResponseEntity
@@ -72,7 +63,7 @@ public class MemberController {
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<MemberResponse>> updateMember(
             @PathVariable Long id,
-            @Valid @RequestBody MemberUpdateRequest request
+            @RequestBody MemberUpdateRequest request
     ) {
         MemberResponse member = memberService.updateMember(id, request);
         return ResponseEntity.ok(ApiResponse.success("회원 정보가 성공적으로 수정되었습니다.", member));
@@ -112,12 +103,10 @@ public class MemberController {
             Member member = memberRepository.findByLoginId(loginId)
                     .orElseThrow(() -> new BusinessException("존재하지 않는 아이디입니다."));
           
-            // 비밀번호 확인 (실제로는 암호화된 비밀번호와 비교해야 함)
             if (!password.equals(member.getPassword())) {
                 throw new BusinessException("비밀번호가 일치하지 않습니다.");
             }
             
-            // 비활성화된 회원 체크
             if (member.getStatus() == Enums.MemberStatus.INACTIVE) {
                 throw new BusinessException("비활성화된 계정입니다.");
             }
@@ -133,10 +122,9 @@ public class MemberController {
                     .body(ApiResponse.error("로그인 중 오류가 발생했습니다."));
         }
     }
-    
-    @PostMapping("/init-test-data")
-    public ResponseEntity<ApiResponse<Void>> initTestData() {
-        memberService.initializeTestData();
-        return ResponseEntity.ok(ApiResponse.success("테스트 데이터가 초기화되었습니다.", null));
+
+    @GetMapping("/health")
+    public String health() {
+        return "OK";
     }
 }

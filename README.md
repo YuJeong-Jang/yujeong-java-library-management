@@ -1,26 +1,27 @@
 # 도서관리 시스템 (MSA)
 
-### Java / Spring Boot 기반 도서 관리 시스템으로, MSA(Microservices Architecture) 구조로 구현된 프로젝트
+### Java / Spring MVC 기반 도서 관리 시스템으로, MSA(Microservices Architecture) 구조로 구현된 프로젝트
 
 ## 📋 프로젝트 개요
 - 회원, 도서, 대여 도메인을 분리한 멀티 모듈 구조
-- Spring Boot + Spring Data JPA + MySQL
+- Spring MVC + JDBC + MySQL (경량화)
 - 프로파일(local, prod) 기반 환경 분리
-- WebClient를 통한 MSA 간 통신
-- Thymeleaf 기반 프론트엔드
+- HttpClient를 통한 MSA 간 통신
+- JSP + JSTL 기반 프론트엔드
 
 ## 🛠 기술 스택
-- **Backend**: Java 17, Spring Boot 3.3.5
-- **Database**: MySQL 8.0
-- **Frontend**: Thymeleaf, Bootstrap 5, JavaScript
+- **Backend**: Java 17, Spring MVC 6.1.1
+- **Database**: MySQL 8.0 (순수 JDBC)
+- **Frontend**: JSP, JSTL, Bootstrap 5, JavaScript
 - **Build**: Gradle (멀티 모듈)
-- **Communication**: Spring WebFlux WebClient
+- **Communication**: Apache HttpClient 5
+- **Server**: Tomcat 10
 
 ## 🏗 MSA 구조
 
 ```
 yujeong-java-library-management/
-├── library-common/          # 공통 모듈 (엔티티, DTO, 예외처리)
+├── library-common/          # 공통 모듈 (도메인, DTO, Repository)
 ├── library-book/           # 도서 관리 서비스 (Port: 8080)
 ├── library-member/         # 회원 관리 서비스 (Port: 7070)
 ├── library-rental/         # 대여 관리 서비스 (Port: 9090)
@@ -30,8 +31,9 @@ yujeong-java-library-management/
 ### 서비스별 역할
 
 #### 🔹 Library-Common
-- 공통 엔티티 (Member, Book, Rental)
+- 공통 도메인 (Member, Book, Rental)
 - 공통 DTO 및 응답 클래스
+- JDBC Repository 구현
 - 예외 처리 및 유틸리티
 
 #### 🔹 Library-Book (Port: 8080)
@@ -58,20 +60,27 @@ yujeong-java-library-management/
 
 ### 1. 사전 준비
 ```bash
-# MySQL 설치 및 실행 (54.180.241.63:3306)
+# MySQL 설치 및 실행
 # 데이터베이스 생성
 CREATE DATABASE library;
 ```
 
-### 2. 전체 서비스 실행
+### 2. WAR 빌드
 ```bash
-gradlew :library-book:bootRun
-gradlew :library-member:bootRun
-gradlew :library-rental:bootRun
-gradlew :library-frontend:bootRun
+# 전체 빌드
+gradlew clean build
+
+# WAR 파일 위치
+# library-book/build/libs/library-book.war
+# library-member/build/libs/library-member.war
+# library-rental/build/libs/library-rental.war
+# library-frontend/build/libs/library-frontend.war
 ```
 
-### 3. 서비스 접속
+### 3. Tomcat 배포
+각 WAR 파일을 Tomcat의 webapps 디렉토리에 배포하거나, 별도의 Tomcat 인스턴스에서 실행
+
+### 4. 서비스 접속
 - **프론트엔드**: http://localhost:3000
 - **도서 API**: http://localhost:8080/api/books
 - **회원 API**: http://localhost:7070/api/members
@@ -123,13 +132,13 @@ gradlew :library-frontend:bootRun
 
 ```
 Frontend (3000)
-    ↓ WebClient
+    ↓ HttpClient
 ┌─────────────────────────────────┐
 │  Book Service (8080)            │
 │  Member Service (7070)          │  
 │  Rental Service (9090)          │
 └─────────────────────────────────┘
-    ↓ JPA
+    ↓ JDBC
 ┌─────────────────────────────────┐
 │  MySQL Database (3306)          │
 │  - library                      │
@@ -144,7 +153,7 @@ Frontend (3000)
 - ✅ 재고 관리
 - ✅ 카테고리별 분류
 
-### 👥 회원 관리  
+###  회원 관리  
 - ✅ 회원 가입/정보 수정
 - ✅ 회원 상태 관리
 - ✅ 권한 관리 (일반/관리자)
@@ -170,16 +179,12 @@ Frontend (3000)
 ```properties
 # 공통 설정 예시
 server.port=8080
-spring.application.name=library-book
 
 # 데이터베이스 설정
-spring.datasource.url=jdbc:mysql://database_ip:3306/database_name
-spring.datasource.username=database_username
-spring.datasource.password=database_password
-
-# JPA 설정
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
+spring.datasource.url=jdbc:mysql://10.0.2.30:3306/library
+spring.datasource.username=library
+spring.datasource.password=Management1234!
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 ```
 
 ## 📝 API 문서
@@ -210,9 +215,9 @@ PATCH  /api/members/{id}/deactivate # 회원 비활성화
 GET    /api/rentals            # 전체 대여 조회
 GET    /api/rentals/{id}       # 대여 상세 조회
 GET    /api/rentals/member/{memberId}  # 회원별 대여 조회
-GET    /api/rentals/overdue    # 연체 도서 조회
 POST   /api/rentals            # 도서 대여
 PATCH  /api/rentals/{id}/return # 도서 반납
+DELETE /api/rentals/{id}       # 대여 기록 삭제
 ```
 
 ## 🎨 UI/UX 특징
@@ -223,9 +228,24 @@ PATCH  /api/rentals/{id}/return # 도서 반납
 - **실시간 피드백**: 성공/오류 메시지 표시
 - **카드 기반 레이아웃**: 정보의 시각적 구분
 
+## ⚡ 성능 최적화
+
+### 경량화 전략
+1. **Spring Boot 제거**: Spring MVC로 전환하여 불필요한 의존성 제거
+2. **JPA/Hibernate 제거**: 순수 JDBC + JdbcTemplate 사용
+3. **Validation 제거**: 서비스 레이어에서 직접 검증
+4. **Thymeleaf → JSP**: 템플릿 엔진 경량화
+5. **WebClient → HttpClient**: 통신 라이브러리 경량화
+
+### 결과
+- **WAR 파일**: 33MB → 10MB (70% 감소)
+- **시작 시간**: 대폭 단축
+- **메모리 사용량**: 감소
+- **의존성 최소화**: Spring Core + JDBC + Servlet만 사용
+
 ## 🔮 향후 계획
 
-- [ ] Docker 컨테이너화
+- [x] 순수 JDBC 전환 (경량화)
 - [ ] Kubernetes 배포
 - [ ] API Gateway 도입
 - [ ] 서비스 디스커버리 (Eureka)
@@ -241,4 +261,4 @@ PATCH  /api/rentals/{id}/return # 도서 반납
 
 **개발자**: 유정  
 **개발 기간**: 2025년 
-**기술 스택**: Java 17, Spring Boot 3.3.5, MySQL, Thymeleaf, Bootstrap 5
+**기술 스택**: Java 17, Spring MVC 6.1.1, JDBC, MySQL, JSP, Bootstrap 5

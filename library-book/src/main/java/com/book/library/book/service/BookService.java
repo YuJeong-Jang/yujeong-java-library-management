@@ -8,8 +8,6 @@ import com.book.library.book.repository.BookRepository;
 import com.book.library.book.response.BookResponse;
 import com.book.library.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,11 +25,6 @@ public class BookService {
         return bookRepository.findAll().stream()
                 .map(BookResponse::from)
                 .toList();
-    }
-    
-    public Page<BookResponse> getBooks(Pageable pageable) {
-        return bookRepository.findAll(pageable)
-                .map(BookResponse::from);
     }
     
     public BookResponse getBook(Long id) {
