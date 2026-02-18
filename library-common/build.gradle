@@ -5,8 +5,14 @@ apply plugin: 'java-library'
 dependencies {
     // 도메인/DTO에 필요한 최소 의존성만
     api 'com.fasterxml.jackson.core:jackson-annotations:2.16.0'
+    api 'com.fasterxml.jackson.core:jackson-databind:2.16.0'
+    api 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.16.0'
     api 'org.springframework:spring-context:6.1.1'
     api 'org.springframework:spring-jdbc:6.1.1'
     api 'org.springframework:spring-tx:6.1.1'
     api 'mysql:mysql-connector-java:8.0.33'
+    
+    // Lombok - api로 변경하여 의존 모듈에서도 사용 가능하도록
+    api 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
 }

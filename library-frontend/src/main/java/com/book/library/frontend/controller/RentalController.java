@@ -32,6 +32,24 @@ public class RentalController {
             List<Map<String, Object>> rentals = rentalService.getAllRentals();
             model.addAttribute("rentals", rentals);
             
+            // 대여 등록을 위한 도서 및 회원 목록 추가
+            List<Map<String, Object>> allBooks = bookService.getAllBooks();
+            List<Map<String, Object>> availableBooks = allBooks.stream()
+                .filter(book -> {
+                    Object status = book.get("status");
+                    Object availableQty = book.get("availableQty");
+                    boolean isAvailable = "AVAILABLE".equals(status) || Integer.valueOf(0).equals(status);
+                    boolean hasQuantity = availableQty != null && 
+                        (availableQty instanceof Integer ? (Integer) availableQty > 0 : 
+                         Integer.parseInt(availableQty.toString()) > 0);
+                    return isAvailable && hasQuantity;
+                })
+                .toList();
+            model.addAttribute("availableBooks", availableBooks);
+            
+            List<Map<String, Object>> activeMembers = memberService.getActiveMembers();
+            model.addAttribute("activeMembers", activeMembers);
+            
             // 통계 계산
             long totalRentals = rentals.size();
             long activeRentals = rentals.stream()
@@ -61,6 +79,8 @@ public class RentalController {
             
         } catch (Exception e) {
             model.addAttribute("rentals", java.util.Collections.emptyList());
+            model.addAttribute("availableBooks", java.util.Collections.emptyList());
+            model.addAttribute("activeMembers", java.util.Collections.emptyList());
             model.addAttribute("error", "대여 목록을 불러오는 중 오류가 발생했습니다.");
             model.addAttribute("totalRentals", 0);
             model.addAttribute("activeRentals", 0);

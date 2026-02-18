@@ -13,8 +13,10 @@ public class RentalResponse {
     Long id;
     Long memberId;
     String memberName;
+    String memberEmail;
     Long bookId;
     String bookTitle;
+    String bookAuthor;
     Enums.RentalStatus rentalStatus;
     Instant rentalDate;
     Instant dueDate;
@@ -25,9 +27,11 @@ public class RentalResponse {
         return RentalResponse.builder()
                 .id(rental.getId())
                 .memberId(rental.getMemberId())
-                .memberName(null) // JDBC에서는 조인 필요
+                .memberName(null)
+                .memberEmail(null)
                 .bookId(rental.getBookId())
-                .bookTitle(null) // JDBC에서는 조인 필요
+                .bookTitle(null)
+                .bookAuthor(null)
                 .rentalStatus(rental.getRentalStatus())
                 .rentalDate(rental.getRentalDate())
                 .dueDate(rental.getDueDate())

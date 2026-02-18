@@ -84,6 +84,12 @@ public class MemberService {
         member.setName(request.getName());
         member.setEmail(request.getEmail());
         member.setPhone(request.getPhone());
+        
+        // 비밀번호가 제공된 경우에만 업데이트
+        if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+            member.setPassword(request.getPassword());
+        }
+        
         member.setUpdatedAt(Instant.now());
         
         Member saved = memberRepository.save(member);

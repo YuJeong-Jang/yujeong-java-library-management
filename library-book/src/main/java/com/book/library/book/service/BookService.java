@@ -49,8 +49,13 @@ public class BookService {
         book.setPublisher(request.getPublisher());
         book.setPublishDate(request.getPublishDate());
         book.setCategory(request.getCategory());
-        book.setTotalQuantity(request.getTotalQuantity());
-        book.setAvailableQty(request.getAvailableQty());
+        
+        // totalQuantity와 availableQty가 null이면 기본값 1 설정
+        Integer totalQty = request.getTotalQuantity() != null ? request.getTotalQuantity() : 1;
+        Integer availableQty = request.getAvailableQty() != null ? request.getAvailableQty() : totalQty;
+        
+        book.setTotalQuantity(totalQty);
+        book.setAvailableQty(availableQty);
         book.setStatus(Enums.BookStatus.AVAILABLE);
         book.setCreatedAt(Instant.now());
         book.setUpdatedAt(Instant.now());
@@ -70,8 +75,15 @@ public class BookService {
         book.setPublisher(request.getPublisher());
         book.setPublishDate(request.getPublishDate());
         book.setCategory(request.getCategory());
-        book.setTotalQuantity(request.getTotalQuantity());
-        book.setAvailableQty(request.getAvailableQty());
+        
+        // totalQuantity와 availableQty가 null이 아닐 때만 업데이트
+        if (request.getTotalQuantity() != null) {
+            book.setTotalQuantity(request.getTotalQuantity());
+        }
+        if (request.getAvailableQty() != null) {
+            book.setAvailableQty(request.getAvailableQty());
+        }
+        
         book.setUpdatedAt(Instant.now());
         
         Book saved = bookRepository.save(book);
