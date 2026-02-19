@@ -35,18 +35,43 @@ public class HomeController {
             List<Map<String, Object>> members = memberService.getAllMembers();
             List<Map<String, Object>> rentals = rentalService.getAllRentals();
             
-            // 도서 통계
-            model.addAttribute("totalBooks", books.size());
+            // 도서 통계 - 총 권수 계산
+            int totalBookQuantity = books.stream()
+                .mapToInt(book -> {
+                    Object qty = book.get("totalQuantity");
+                    if (qty instanceof Integer) {
+                        return (Integer) qty;
+                    } else if (qty != null) {
+                        try {
+                            return Integer.parseInt(qty.toString());
+                        } catch (NumberFormatException e) {
+                            return 1;
+                        }
+                    }
+                    return 1;
+                })
+                .sum();
+            model.addAttribute("totalBooks", totalBookQuantity);
             
             // 회원 통계
             model.addAttribute("totalMembers", members.size());
             
-            // 대여 통계
+            // 대여 통계 - rentalStatus 필드 확인
             long activeRentals = rentals.stream()
-                .filter(rental -> rental.get("returnDate") == null || "".equals(rental.get("returnDate")))
+                .filter(rental -> {
+                    Object status = rental.get("rentalStatus");
+                    if (status == null) return false;
+                    // Enum 문자열 또는 ordinal 값 체크
+                    return "RENTED".equals(status.toString()) || Integer.valueOf(0).equals(status);
+                })
                 .count();
             long overdueRentals = rentals.stream()
-                .filter(rental -> "OVERDUE".equals(rental.get("status")) || "연체".equals(rental.get("status")))
+                .filter(rental -> {
+                    Object status = rental.get("rentalStatus");
+                    if (status == null) return false;
+                    // Enum 문자열 또는 ordinal 값 체크
+                    return "OVERDUE".equals(status.toString()) || Integer.valueOf(2).equals(status);
+                })
                 .count();
             
             model.addAttribute("activeRentals", activeRentals);

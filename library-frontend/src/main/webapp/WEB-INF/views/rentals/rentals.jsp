@@ -122,13 +122,13 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <c:choose>
-                                                <c:when test="${rental.status == 'ACTIVE'}">
+                                                <c:when test="${rental.rentalStatus == 'RENTED'}">
                                                     <span
                                                         class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
                                                         <i class="fas fa-clock mr-1"></i>대여중
                                                     </span>
                                                 </c:when>
-                                                <c:when test="${rental.status == 'RETURNED'}">
+                                                <c:when test="${rental.rentalStatus == 'RETURNED'}">
                                                     <span
                                                         class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                                         <i class="fas fa-check-circle mr-1"></i>반납완료
@@ -143,7 +143,8 @@
                                             </c:choose>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                            <c:if test="${rental.status == 'ACTIVE'}">
+                                            <c:if
+                                                test="${rental.rentalStatus == 'RENTED' || rental.rentalStatus == 'OVERDUE'}">
                                                 <button data-rental-id="${rental.id}"
                                                     onclick="returnBook(this.getAttribute('data-rental-id'))"
                                                     class="text-green-600 hover:text-green-900 transition-colors">

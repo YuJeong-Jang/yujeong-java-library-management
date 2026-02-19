@@ -80,6 +80,9 @@
                                         출판사</th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        수량</th>
+                                    <th
+                                        class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         상태</th>
                                     <th
                                         class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -108,6 +111,12 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-900">${book.publisher}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="text-sm text-gray-900">
+                                                <span class="font-medium">총 ${book.totalQuantity}권</span>
+                                                <span class="text-gray-500 ml-2">(대여가능 ${book.availableQty}권)</span>
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <c:choose>
@@ -174,6 +183,11 @@
                                 <input type="text" id="isbn" name="isbn" required
                                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
+                            <div>
+                                <label for="totalQuantity" class="block text-sm font-medium text-gray-700">총 수량</label>
+                                <input type="number" id="totalQuantity" name="totalQuantity" min="1" value="1" required
+                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            </div>
                         </form>
                         <div class="flex justify-end space-x-3 mt-6">
                             <button onclick="closeBookModal()"
@@ -198,6 +212,12 @@
                     document.getElementById( 'bookModal' ).classList.add( 'hidden' );
                     document.getElementById( 'bookForm' ).reset();
                     document.querySelector( '#bookModal h2' ).innerHTML = '<i class="fas fa-plus mr-2 text-blue-600"></i>도서 등록';
+
+                    // 버튼을 원래대로 복원
+                    const submitBtn = document.querySelector( '#bookModal button[onclick*="BookForm"]' );
+                    if ( submitBtn ) {
+                        submitBtn.setAttribute( 'onclick', 'submitBookForm()' );
+                    }
                 };
 
                 window.submitBookForm = function () {
@@ -234,8 +254,15 @@
                                 document.getElementById( 'author' ).value = book.author || '';
                                 document.getElementById( 'publisher' ).value = book.publisher || '';
                                 document.getElementById( 'isbn' ).value = book.isbn || '';
+                                document.getElementById( 'totalQuantity' ).value = book.totalQuantity || 1;
                                 document.querySelector( '#bookModal h2' ).innerHTML = '<i class="fas fa-edit mr-2 text-blue-600"></i>도서 수정';
-                                document.querySelector( '#bookModal button[onclick="submitBookForm()"]' ).setAttribute( 'onclick', 'updateBookForm(' + bookId + ')' );
+
+                                // 버튼 onclick 변경
+                                const submitBtn = document.querySelector( '#bookModal button[onclick*="submitBookForm"]' );
+                                if ( submitBtn ) {
+                                    submitBtn.setAttribute( 'onclick', 'updateBookForm(' + bookId + ')' );
+                                }
+
                                 openBookModal();
                             } else {
                                 alert( '도서 정보를 불러오는데 실패했습니다: ' + ( result.message || '알 수 없는 오류' ) );

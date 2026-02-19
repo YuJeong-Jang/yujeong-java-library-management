@@ -30,6 +30,35 @@ public class RentalController {
         
         try {
             List<Map<String, Object>> rentals = rentalService.getAllRentals();
+            
+            // 회원 및 도서 정보 조인
+            List<Map<String, Object>> members = memberService.getAllMembers();
+            List<Map<String, Object>> books = bookService.getAllBooks();
+            
+            // 각 rental에 member와 book 정보 추가
+            for (Map<String, Object> rental : rentals) {
+                Long memberId = getLongValue(rental.get("memberId"));
+                Long bookId = getLongValue(rental.get("bookId"));
+                
+                // 회원 정보 찾기
+                members.stream()
+                    .filter(m -> memberId.equals(getLongValue(m.get("id"))))
+                    .findFirst()
+                    .ifPresent(member -> {
+                        rental.put("memberName", member.get("name"));
+                        rental.put("memberEmail", member.get("email"));
+                    });
+                
+                // 도서 정보 찾기
+                books.stream()
+                    .filter(b -> bookId.equals(getLongValue(b.get("id"))))
+                    .findFirst()
+                    .ifPresent(book -> {
+                        rental.put("bookTitle", book.get("title"));
+                        rental.put("bookAuthor", book.get("author"));
+                    });
+            }
+            
             model.addAttribute("rentals", rentals);
             
             // 대여 등록을 위한 도서 및 회원 목록 추가
@@ -88,6 +117,17 @@ public class RentalController {
             model.addAttribute("overdueRentals", 0);
         }
         return "rentals/rentals";
+    }
+    
+    private Long getLongValue(Object value) {
+        if (value == null) return 0L;
+        if (value instanceof Long) return (Long) value;
+        if (value instanceof Integer) return ((Integer) value).longValue();
+        try {
+            return Long.parseLong(value.toString());
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
     }
     
     // 테스트 엔드포인트 - 백엔드 연결 확인

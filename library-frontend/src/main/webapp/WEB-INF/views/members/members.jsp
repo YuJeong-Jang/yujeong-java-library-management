@@ -152,7 +152,7 @@
                                                 <c:when test="${member.status == 'ACTIVE'}">
                                                     <button data-member-id="${member.id}"
                                                         onclick="deactivateMember(this.getAttribute('data-member-id'))"
-                                                        class="text-red-600 hover:text-red-900 transition-colors">
+                                                        class="text-orange-600 hover:text-orange-900 transition-colors">
                                                         <i class="fas fa-ban mr-1"></i>비활성화
                                                     </button>
                                                 </c:when>
@@ -164,6 +164,11 @@
                                                     </button>
                                                 </c:otherwise>
                                             </c:choose>
+                                            <button data-member-id="${member.id}"
+                                                onclick="deleteMember(this.getAttribute('data-member-id'))"
+                                                class="text-red-600 hover:text-red-900 transition-colors">
+                                                <i class="fas fa-trash mr-1"></i>삭제
+                                            </button>
                                         </td>
                                     </tr>
                                 </c:forEach>
@@ -207,6 +212,14 @@
                                 <input type="tel" id="phone" name="phone" required
                                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500">
                             </div>
+                            <div>
+                                <label for="role" class="block text-sm font-medium text-gray-700">권한</label>
+                                <select id="role" name="role"
+                                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500">
+                                    <option value="0">일반 사용자</option>
+                                    <option value="1">관리자</option>
+                                </select>
+                            </div>
                         </form>
                         <div class="flex justify-end space-x-3 mt-6">
                             <button onclick="closeMemberModal()"
@@ -231,6 +244,7 @@
                     document.getElementById( 'memberModal' ).classList.add( 'hidden' );
                     document.getElementById( 'memberForm' ).reset();
                     document.getElementById( 'loginId' ).readOnly = false;
+                    document.getElementById( 'password' ).required = true;
                     document.getElementById( 'password' ).placeholder = '';
                     document.querySelector( '#memberModal h2' ).innerHTML = '<i class="fas fa-user-plus mr-2 text-green-600"></i>회원 등록';
                 };
@@ -268,12 +282,27 @@
                                 document.getElementById( 'loginId' ).value = member.loginId || '';
                                 document.getElementById( 'loginId' ).readOnly = true;
                                 document.getElementById( 'password' ).value = '';
+                                document.getElementById( 'password' ).required = false;
                                 document.getElementById( 'password' ).placeholder = '변경하지 않으려면 비워두세요';
                                 document.getElementById( 'name' ).value = member.name || '';
                                 document.getElementById( 'email' ).value = member.email || '';
                                 document.getElementById( 'phone' ).value = member.phone || '';
+
+                                // role 값 설정 (ADMIN=1, USER=0 또는 문자열 처리)
+                                let roleValue = 0;
+                                if ( member.role === 1 || member.role === 'ADMIN' ) {
+                                    roleValue = 1;
+                                }
+                                document.getElementById( 'role' ).value = roleValue;
+
                                 document.querySelector( '#memberModal h2' ).innerHTML = '<i class="fas fa-user-edit mr-2 text-green-600"></i>회원 수정';
-                                document.querySelector( '#memberModal button[onclick="submitMemberForm()"]' ).setAttribute( 'onclick', 'updateMemberForm(' + memberId + ')' );
+
+                                // 버튼 onclick 변경
+                                const submitBtn = document.querySelector( '#memberModal button[onclick*="submitMemberForm"]' );
+                                if ( submitBtn ) {
+                                    submitBtn.setAttribute( 'onclick', 'updateMemberForm(' + memberId + ')' );
+                                }
+
                                 openMemberModal();
                             } else {
                                 alert( '회원 정보를 불러오는데 실패했습니다: ' + ( result.message || '알 수 없는 오류' ) );
@@ -352,6 +381,28 @@
                             .catch( error => {
                                 console.error( 'Error:', error );
                                 alert( '회원 활성화 중 오류가 발생했습니다: ' + error.message );
+                            } );
+                    }
+                };
+
+                window.deleteMember = function ( memberId ) {
+                    if ( confirm( '정말로 이 회원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.' ) ) {
+                        fetch( '/members/' + memberId, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' }
+                        } )
+                            .then( response => response.json() )
+                            .then( result => {
+                                if ( result.success ) {
+                                    alert( '회원이 성공적으로 삭제되었습니다.' );
+                                    location.reload();
+                                } else {
+                                    alert( '회원 삭제에 실패했습니다: ' + ( result.message || '알 수 없는 오류' ) );
+                                }
+                            } )
+                            .catch( error => {
+                                console.error( 'Error:', error );
+                                alert( '회원 삭제 중 오류가 발생했습니다: ' + error.message );
                             } );
                     }
                 };

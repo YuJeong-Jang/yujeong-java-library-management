@@ -72,7 +72,14 @@ public class RentalService {
         
         Instant now = Instant.now();
         rental.setRentalDate(now);
-        rental.setDueDate(now.plus(14, ChronoUnit.DAYS));
+        
+        // dueDate가 제공되면 사용, 아니면 14일 후로 설정
+        if (request.getDueDate() != null) {
+            rental.setDueDate(request.getDueDate().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant());
+        } else {
+            rental.setDueDate(now.plus(14, ChronoUnit.DAYS));
+        }
+        
         rental.setRemarks(request.getRemarks());
         
         Rental saved = rentalRepository.save(rental);
@@ -92,11 +99,11 @@ public class RentalService {
         Rental rental = rentalRepository.findById(rentalId)
                 .orElseThrow(() -> new BusinessException("대여 기록을 찾을 수 없습니다. ID: " + rentalId));
         
-        if (rental.getRentalStatus() != Enums.RentalStatus.RENTED) {
+        if (rental.getRentalStatus() == Enums.RentalStatus.RETURNED) {
             throw new BusinessException("이미 반납된 도서입니다.");
         }
         
-        // 반납 처리
+        // 반납 처리 (RENTED 또는 OVERDUE 상태 모두 반납 가능)
         rental.setRentalStatus(Enums.RentalStatus.RETURNED);
         rental.setReturnDate(Instant.now());
         Rental saved = rentalRepository.save(rental);
@@ -116,8 +123,9 @@ public class RentalService {
         Rental rental = rentalRepository.findById(id)
                 .orElseThrow(() -> new BusinessException("대여 기록을 찾을 수 없습니다. ID: " + id));
         
-        // 대여 중인 경우 도서 재고 복구
-        if (rental.getRentalStatus() == Enums.RentalStatus.RENTED) {
+        // 대여 중인 경우 도서 재고 복구 (RENTED 또는 OVERDUE 상태)
+        if (rental.getRentalStatus() == Enums.RentalStatus.RENTED || 
+            rental.getRentalStatus() == Enums.RentalStatus.OVERDUE) {
             var book = bookRepository.findById(rental.getBookId())
                     .orElseThrow(() -> new BusinessException("도서를 찾을 수 없습니다."));
             book.setAvailableQty(book.getAvailableQty() + 1);

@@ -90,6 +90,15 @@ public class MemberService {
             member.setPassword(request.getPassword());
         }
         
+        // 권한이 제공된 경우에만 업데이트
+        if (request.getRole() != null) {
+            if (request.getRole() == 0) {
+                member.setRole(Enums.MemberRole.USER);
+            } else if (request.getRole() == 1) {
+                member.setRole(Enums.MemberRole.ADMIN);
+            }
+        }
+        
         member.setUpdatedAt(Instant.now());
         
         Member saved = memberRepository.save(member);
