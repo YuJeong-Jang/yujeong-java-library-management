@@ -243,16 +243,6 @@ DELETE /api/rentals/{id}       # 대여 기록 삭제
 - **메모리 사용량**: 감소
 - **의존성 최소화**: Spring Core + JDBC + Servlet만 사용
 
-## 🔮 향후 계획
-
-- [x] 순수 JDBC 전환 (경량화)
-- [ ] Kubernetes 배포
-- [ ] API Gateway 도입
-- [ ] 서비스 디스커버리 (Eureka)
-- [ ] 분산 추적 (Zipkin)
-- [ ] 로그 집중화 (ELK Stack)
-- [ ] 보안 강화 (Spring Security + JWT)
-
 ## 📄 라이선스
 
 이 프로젝트는 학습 목적으로 제작되었습니다.
